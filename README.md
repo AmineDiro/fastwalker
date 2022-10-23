@@ -27,7 +27,7 @@ We achived a **~10x speedup** 💯.
 
 ### TODO : 
 - [ ] Figure out the difference btw file count python vs golang
-- [ ] Bypass symlink
+- [ ] Check for symlinks
 - [ ] Add callback func to execute user defined function while walking the directory
 
 
