@@ -4,8 +4,8 @@ import (
 	"flag"
 	"log"
 	"os"
+	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 )
@@ -26,7 +26,7 @@ type Walker struct {
 func InitWalker(dirs []string) *Walker {
 	// Init the Walker
 	nworkers := runtime.NumCPU() * _ParallelismFactor
-	// nworkers := 1
+
 	log.Default().Printf("Walking %v\n", dirs)
 	return &Walker{
 		nWorkers: nworkers,
@@ -44,6 +44,7 @@ func (w *Walker) Run() {
 		go w.worker()
 	}
 
+	w.wg.Add(len(w.dirs))
 	w.addDir(w.dirs)
 
 	go func() {
@@ -59,42 +60,40 @@ func (w *Walker) Run() {
 func (w *Walker) worker() {
 	for dir := range w.in {
 		childDirs := []string{}
+
 		paths, err := os.ReadDir(dir)
 		if err != nil {
-			log.Printf("Error %v in %s\n", err, dir)
-			return
+			w.wg.Done()
+			continue
 		}
 
 		for _, path := range paths {
-
 			if path.IsDir() {
-				childpath := strings.TrimSuffix(dir+"/"+path.Name(), "/")
+				childpath := filepath.Join(dir, path.Name())
 				childDirs = append(childDirs, childpath)
 			}
 			if path.Type().IsRegular() {
 				w.out <- path.Name()
 			}
 		}
-		w.addDir(childDirs)
+
+		if len(childDirs) > 0 {
+			w.wg.Add(len(childDirs))
+			go w.addDir(childDirs)
+		}
 
 		w.wg.Done()
 	}
 }
 
 func (w *Walker) addDir(dirs []string) {
-	if len(dirs) > 0 {
-
-		w.wg.Add(len(dirs))
-		go func() {
-			for _, dir := range w.dirs {
-				w.in <- dir
-			}
-		}()
+	for _, dir := range dirs {
+		w.in <- dir
 	}
 }
 
 func main() {
-	rootPath := flag.String("path", "/home/amine/Documents/programming/golang/", "path to crawl")
+	rootPath := flag.String("path", "/home/amine/Documents/", "path to crawl")
 	flag.Parse()
 
 	s := time.Now()
@@ -102,16 +101,18 @@ func main() {
 	w := InitWalker([]string{*rootPath})
 
 	// harvest results
+	rDone := make(chan bool)
 	results := []string{}
 	go func() {
 		for p := range w.out {
 			results = append(results, p)
 		}
+		rDone <- true
 	}()
 	w.Run()
 
 	e := time.Since(s)
-
+	<-rDone
 	log.Default().Printf("%v files in %fs", len(results), e.Seconds())
 
 }
