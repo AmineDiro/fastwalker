@@ -12,8 +12,12 @@ def scantree(dir: str):
 
 
 if __name__ == "__main__":
-    root_path = "/home/amine"
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument('--path', help='sum the integers (default: find the max)')
+    args = parser.parse_args()    
     s = perf_counter()
-    entries = list(scantree(root_path))
+    entries = list(scantree(args.path))
     e = perf_counter()
     print(f"Finished crawling {len(entries)} in {e-s:.2f}")    
