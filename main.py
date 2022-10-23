@@ -12,7 +12,7 @@ def scantree(dir: str):
 
 
 if __name__ == "__main__":
-    root_path = "/home/amine/Documents"
+    root_path = "/home/amine"
     s = perf_counter()
     entries = list(scantree(root_path))
     e = perf_counter()

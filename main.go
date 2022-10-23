@@ -93,7 +93,7 @@ func (w *Walker) addDir(dirs []string) {
 }
 
 func main() {
-	rootPath := flag.String("path", "/home/amine/Documents/", "path to crawl")
+	rootPath := flag.String("path", "/home/amine", "path to crawl")
 	flag.Parse()
 
 	s := time.Now()
